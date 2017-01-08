@@ -1,0 +1,48 @@
+## ------------------------------ ##
+##
+## Spigot Buyer Notification
+## (c) Maxim Van de Wynckel
+##
+## ------------------------------ ##
+
+## !!
+# This application will auto send a PM
+# when a new buyer is added to a premium plugin.
+#
+# You can use it to thank them for purchase or
+# give them more information.
+## !!
+
+
+# DO NOT EDIT!
+config: 1
+
+
+
+# Spigot Username
+username: ''
+
+# Spigot password
+password: ''
+
+# Spigot 2FA key if enabled
+2fakey: ''
+
+# Pushbullet API access token
+access-token: ""
+
+# Check interval in seconds
+# This is the interval the application
+# will check for new buyers.
+interval: 60
+
+
+# Notification title (plain text)
+title: 'Someone bought {plugin}'
+
+# Notification message
+# Placeholders:
+#   {plugin} - The title of your resource
+#   {member} - The member usernames who bought it
+message: |
+  {member} has bought {plugin}!
