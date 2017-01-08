@@ -47,9 +47,15 @@ public class SpigotBuyerNotification {
 
         Console.info("Logging in " + username + " ...");
         try {
-            User user = SpigotSite.getAPI().getUserManager()
-                    .authenticate(username, password, totpSecret);
-            setUser(user);
+            if (totpSecret.equals("")){
+                User user = SpigotSite.getAPI().getUserManager()
+                        .authenticate(username, password);
+                setUser(user);
+            }else {
+                User user = SpigotSite.getAPI().getUserManager()
+                        .authenticate(username, password, totpSecret);
+                setUser(user);
+            }
         } catch (InvalidCredentialsException e) {
             Console.info("Unable to log in! Wrong credentials!");
             return;

@@ -6,11 +6,8 @@
 ## ------------------------------ ##
 
 ## !!
-# This application will auto send a PM
+# This application will send a PushBullet notification
 # when a new buyer is added to a premium plugin.
-#
-# You can use it to thank them for purchase or
-# give them more information.
 ## !!
 
 
