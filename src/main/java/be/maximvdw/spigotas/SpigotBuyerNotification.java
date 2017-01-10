@@ -34,7 +34,7 @@ public class SpigotBuyerNotification {
 
     @SuppressWarnings("deprecation")
     public SpigotBuyerNotification(String... args) {
-        Console.info("Initializing Spigot Buyer Notification ...");
+        Console.info("Initializing Spigot Buyer Notification v1.1.0 ...");
         new SpigotSiteCore();
         new Configuration(1); // Version 2
 
