@@ -35,10 +35,17 @@ access-token: ""
 # will check for new buyers.
 interval: 60
 
+# Daily revenue report
+# Gives a report per plugin (one message) with
+# the revenue
+daily-report:
+  enabled: true
+  title: "Revenue for today"
 
 # Notification title (plain text)
 title: 'New purchase for {plugin}'
 # Notification title when added (plain text)
+# (not bought, but added by author)
 title-added: 'New buyer added for {plugin}'
 
 # Notification message
@@ -49,6 +56,6 @@ message: |
   {member} has bought {plugin} for {currency} {price}!
 
 # Notification message for when added
-# (not purchased)
+# (not bought, but added by author)
 message-added: |
   {member} has been added to {plugin}

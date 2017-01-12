@@ -3,6 +3,7 @@ package be.maximvdw.spigotas;
 import be.maximvdw.spigotas.config.Configuration;
 import be.maximvdw.spigotas.storage.LogStorage;
 import be.maximvdw.spigotas.ui.Console;
+import be.maximvdw.spigotas.utils.DateUtils;
 import be.maximvdw.spigotsite.SpigotSiteCore;
 import be.maximvdw.spigotsite.api.SpigotSite;
 import be.maximvdw.spigotsite.api.exceptions.ConnectionFailedException;
@@ -32,12 +33,14 @@ public class SpigotBuyerNotification {
     private boolean running = true;
     private LogStorage log = null;
     private String accessToken = "";
+    private Date lastReportDate = null;
 
     @SuppressWarnings("deprecation")
     public SpigotBuyerNotification(String... args) {
         Console.info("Initializing Spigot Buyer Notification v1.2.0 ...");
         new SpigotSiteCore();
         new Configuration(2); // Version 2
+        lastReportDate = DateUtils.getStartOfDay(new Date());
 
         String username = Configuration.getString("username");
         String password = Configuration.getString("password");
@@ -121,7 +124,7 @@ public class SpigotBuyerNotification {
                                 continue;
                             for (Buyer newBuyer : newBuyers) {
                                 if (!buyers.get(res).contains(newBuyer)) {
-                                    if (newBuyer.addedByAuthor()){
+                                    if (newBuyer.addedByAuthor()) {
                                         String title = Configuration
                                                 .getString("title-added")
                                                 .replace("{plugin}",
@@ -144,7 +147,7 @@ public class SpigotBuyerNotification {
                                                 + newBuyer.getUserId()
                                                 + "] has been manually added to "
                                                 + res.getResourceName());
-                                    }else {
+                                    } else {
                                         String title = Configuration
                                                 .getString("title")
                                                 .replace("{plugin}",
@@ -182,6 +185,45 @@ public class SpigotBuyerNotification {
 
                             buyers.put(res, newBuyers);
                         }
+
+                        // Check if time to report
+                        if (Configuration.getBoolean("daily-report.enabled")){
+                            Calendar c1 = Calendar.getInstance(); // today
+                            c1.add(Calendar.DAY_OF_YEAR, -1); // yesterday
+
+                            Calendar c2 = Calendar.getInstance();
+                            c2.setTime(getLastReportDate());
+
+                            if (c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR)
+                                    && c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)) {
+                                // Create report
+                                String title = Configuration.getString("daily-report.title");
+                                String message = "";
+                                for (Resource res : buyers.keySet()) {
+                                    String currency = "";
+                                    double price = 0;
+                                    PremiumResource premiumResource = (PremiumResource) res;
+                                    for (Buyer buyer : premiumResource.getBuyers()){
+                                        if (buyer.getPurchaseDateTime().after(lastReportDate)){
+                                            if (!buyer.addedByAuthor()){
+                                                currency = buyer.getPurchaseCurrency();
+                                                price += buyer.getPurchasePrice();
+                                            }
+                                        }
+                                    }
+                                    price = Math.round(price * 100) / 100.;
+                                    if (!message.equals("")){
+                                        message += "\n";
+                                    }
+                                    message += res.getResourceName() + ": " + currency + " " + price;
+                                }
+                                PushbulletClient client = new PushbulletClient(accessToken);
+                                Push result = client.sendNotePush(title, message);
+                                Console.info("Daily revenue: ");
+                                Console.info(message);
+                                lastReportDate = c2.getTime();
+                            }
+                        }
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -218,5 +260,13 @@ public class SpigotBuyerNotification {
 
     private void setUser(User user) {
         this.user = user;
+    }
+
+    public Date getLastReportDate() {
+        return lastReportDate;
+    }
+
+    public void setLastReportDate(Date lastReportDate) {
+        this.lastReportDate = lastReportDate;
     }
 }
