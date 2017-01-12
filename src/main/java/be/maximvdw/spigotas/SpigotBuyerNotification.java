@@ -222,7 +222,7 @@ public class SpigotBuyerNotification {
                                 Push result = client.sendNotePush(title, message);
                                 Console.info("Daily revenue: ");
                                 Console.info(message);
-                                lastReportDate = c2.getTime();
+                                lastReportDate = new Date();
                             }
                         }
                     } catch (Exception ex) {
