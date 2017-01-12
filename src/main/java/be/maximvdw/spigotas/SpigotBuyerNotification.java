@@ -7,6 +7,7 @@ import be.maximvdw.spigotsite.SpigotSiteCore;
 import be.maximvdw.spigotsite.api.SpigotSite;
 import be.maximvdw.spigotsite.api.exceptions.ConnectionFailedException;
 import be.maximvdw.spigotsite.api.exceptions.SpamWarningException;
+import be.maximvdw.spigotsite.api.resource.Buyer;
 import be.maximvdw.spigotsite.api.resource.PremiumResource;
 import be.maximvdw.spigotsite.api.resource.Resource;
 import be.maximvdw.spigotsite.api.user.Conversation;
@@ -20,23 +21,23 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Spigot Auto Reply
+ * Spigot Buyer Notification
  *
  * @author Maxim Van de Wynckel
  */
 public class SpigotBuyerNotification {
     /* Authenticated user */
     private User user = null;
-    private HashMap<Resource, List<User>> buyers = new HashMap<>();
+    private HashMap<Resource, List<Buyer>> buyers = new HashMap<>();
     private boolean running = true;
     private LogStorage log = null;
     private String accessToken = "";
 
     @SuppressWarnings("deprecation")
     public SpigotBuyerNotification(String... args) {
-        Console.info("Initializing Spigot Buyer Notification v1.1.0 ...");
+        Console.info("Initializing Spigot Buyer Notification v1.2.0 ...");
         new SpigotSiteCore();
-        new Configuration(1); // Version 2
+        new Configuration(2); // Version 2
 
         String username = Configuration.getString("username");
         String password = Configuration.getString("password");
@@ -47,11 +48,11 @@ public class SpigotBuyerNotification {
 
         Console.info("Logging in " + username + " ...");
         try {
-            if (totpSecret.equals("")){
+            if (totpSecret.equals("")) {
                 User user = SpigotSite.getAPI().getUserManager()
                         .authenticate(username, password);
                 setUser(user);
-            }else {
+            } else {
                 User user = SpigotSite.getAPI().getUserManager()
                         .authenticate(username, password, totpSecret);
                 setUser(user);
@@ -62,6 +63,9 @@ public class SpigotBuyerNotification {
         } catch (TwoFactorAuthenticationException e) {
             Console.info("Unable to log in! Two factor authentication failed!");
             return;
+        } catch (ConnectionFailedException e) {
+            Console.info("Unable to connect to spigot");
+            return;
         }
         password = null;
         totpSecret = null;
@@ -69,13 +73,13 @@ public class SpigotBuyerNotification {
         Console.info("Getting your premium plugins ...");
         if (user == null)
             return;
-        List<Resource> resources = SpigotSite.getAPI().getResourceManager()
-                .getResourcesByUser(user);
-        for (Resource res : resources) {
-            if (res instanceof PremiumResource) {
-                Console.info("\t" + res.getResourceName());
-                try {
-                    List<User> resourceBuyers = SpigotSite
+        try {
+            List<Resource> resources = SpigotSite.getAPI().getResourceManager()
+                    .getResourcesByUser(user);
+            for (Resource res : resources) {
+                if (res instanceof PremiumResource) {
+                    Console.info("\t" + res.getResourceName());
+                    List<Buyer> resourceBuyers = SpigotSite
                             .getAPI()
                             .getResourceManager()
                             .getPremiumResourceBuyers(
@@ -84,12 +88,11 @@ public class SpigotBuyerNotification {
                             res,
                             resourceBuyers);
                     Console.info("\t\tBuyers: " + resourceBuyers.size());
-                } catch (ConnectionFailedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                    return;
                 }
             }
+        } catch (ConnectionFailedException ex) {
+            ex.printStackTrace();
+            return;
         }
 
         if (buyers.isEmpty()) {
@@ -109,37 +112,70 @@ public class SpigotBuyerNotification {
                         for (Resource res : buyers.keySet()) {
                             Console.info("Checking for new buyers in: "
                                     + res.getResourceName());
-                            List<User> newBuyers = SpigotSite
+                            List<Buyer> newBuyers = SpigotSite
                                     .getAPI()
                                     .getResourceManager()
                                     .getPremiumResourceBuyers(
                                             (PremiumResource) res, user);
                             if (newBuyers.isEmpty() && (!buyers.isEmpty()))
                                 continue;
-                            for (User newBuyer : newBuyers) {
+                            for (Buyer newBuyer : newBuyers) {
                                 if (!buyers.get(res).contains(newBuyer)) {
-                                    String title = Configuration
-                                            .getString("title")
-                                            .replace("{plugin}",
-                                                    res.getResourceName())
-                                            .replace("{member}",
-                                                    newBuyer.getUsername());
-                                    String message = Configuration
-                                            .getString("message")
-                                            .replace("{plugin}",
-                                                    res.getResourceName())
-                                            .replace("{member}",
-                                                    newBuyer.getUsername());
+                                    if (newBuyer.addedByAuthor()){
+                                        String title = Configuration
+                                                .getString("title-added")
+                                                .replace("{plugin}",
+                                                        res.getResourceName())
+                                                .replace("{member}",
+                                                        newBuyer.getUsername());
+                                        String message = Configuration
+                                                .getString("message-added")
+                                                .replace("{plugin}",
+                                                        res.getResourceName())
+                                                .replace("{member}",
+                                                        newBuyer.getUsername());
 
-                                    PushbulletClient client = new PushbulletClient(accessToken);
-                                    Console.info("\tSending pushbullet!");
-                                    Push result = client.sendNotePush(title,message);
+                                        PushbulletClient client = new PushbulletClient(accessToken);
+                                        Console.info("\tNew buyer added: " + newBuyer.getUsername());
+                                        Push result = client.sendNotePush(title, message);
 
-                                    logMessage("[BUYER] "
-                                            + newBuyer.getUsername() + " ["
-                                            + newBuyer.getUserId()
-                                            + "] bought "
-                                            + res.getResourceName());
+                                        logMessage("[BUYER] "
+                                                + newBuyer.getUsername() + " ["
+                                                + newBuyer.getUserId()
+                                                + "] has been manually added to "
+                                                + res.getResourceName());
+                                    }else {
+                                        String title = Configuration
+                                                .getString("title")
+                                                .replace("{plugin}",
+                                                        res.getResourceName())
+                                                .replace("{member}",
+                                                        newBuyer.getUsername())
+                                                .replace("{currency}",
+                                                        newBuyer.getPurchaseCurrency())
+                                                .replace("{price}",
+                                                        String.valueOf(newBuyer.getPurchasePrice()));
+                                        String message = Configuration
+                                                .getString("message")
+                                                .replace("{plugin}",
+                                                        res.getResourceName())
+                                                .replace("{member}",
+                                                        newBuyer.getUsername())
+                                                .replace("{currency}",
+                                                        newBuyer.getPurchaseCurrency())
+                                                .replace("{price}",
+                                                        String.valueOf(newBuyer.getPurchasePrice()));
+
+                                        PushbulletClient client = new PushbulletClient(accessToken);
+                                        Console.info("\tNew buyer: " + newBuyer.getUsername());
+                                        Push result = client.sendNotePush(title, message);
+
+                                        logMessage("[BUYER] "
+                                                + newBuyer.getUsername() + " ["
+                                                + newBuyer.getUserId()
+                                                + "] bought "
+                                                + res.getResourceName());
+                                    }
                                 }
 
                             }

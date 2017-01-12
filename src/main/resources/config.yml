@@ -12,7 +12,7 @@
 
 
 # DO NOT EDIT!
-config: 1
+config: 2
 
 
 
@@ -28,6 +28,8 @@ password: ''
 # Pushbullet API access token
 access-token: ""
 
+
+
 # Check interval in seconds
 # This is the interval the application
 # will check for new buyers.
@@ -35,11 +37,18 @@ interval: 60
 
 
 # Notification title (plain text)
-title: 'Someone bought {plugin}'
+title: 'New purchase for {plugin}'
+# Notification title when added (plain text)
+title-added: 'New buyer added for {plugin}'
 
 # Notification message
 # Placeholders:
 #   {plugin} - The title of your resource
 #   {member} - The member usernames who bought it
 message: |
-  {member} has bought {plugin}!
+  {member} has bought {plugin} for {currency} {price}!
+
+# Notification message for when added
+# (not purchased)
+message-added: |
+  {member} has been added to {plugin}
