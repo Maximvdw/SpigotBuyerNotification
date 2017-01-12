@@ -52,6 +52,8 @@ title-added: 'New buyer added for {plugin}'
 # Placeholders:
 #   {plugin} - The title of your resource
 #   {member} - The member usernames who bought it
+#   {currency} - The currency
+#   {price} - The price they paid
 message: |
   {member} has bought {plugin} for {currency} {price}!
 
