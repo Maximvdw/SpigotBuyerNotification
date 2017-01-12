@@ -122,8 +122,9 @@ public class SpigotBuyerNotification {
                                             (PremiumResource) res, user);
                             if (newBuyers.isEmpty() && (!buyers.isEmpty()))
                                 continue;
+                            List<Buyer> existingBuyers = buyers.get(res);
                             for (Buyer newBuyer : newBuyers) {
-                                if (!buyers.get(res).contains(newBuyer)) {
+                                if (!existingBuyers.contains(newBuyer)) {
                                     if (newBuyer.addedByAuthor()) {
                                         String title = Configuration
                                                 .getString("title-added")
